@@ -132,9 +132,9 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
           <h2 className="font-serif text-2xl font-semibold">Source packet</h2>
           <div className="mt-4 flex flex-col gap-3">
             {candidates.flatMap((candidate) =>
-              candidate.provenance.map((item) => (
+              candidate.provenance.map((item, provenanceIndex) => (
                 <a
-                  key={`${candidate.id}-${item.url}`}
+                  key={`${candidate.id}-${item.url}-${provenanceIndex}`}
                   href={item.url}
                   target="_blank"
                   rel="noreferrer"
