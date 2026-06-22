@@ -1,0 +1,638 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceType {
+  youtube
+  courtlistener
+  recap
+  pacer
+  muckrock
+  documentcloud
+  web
+  court_tv
+  law_crime
+  manual
+  seed
+}
+
+enum QueryStatus {
+  pending
+  running
+  succeeded
+  failed
+}
+
+enum ContentType {
+  video
+  playlist
+  channel
+  document
+  docket
+  article
+  request
+  unknown
+}
+
+enum CaseStatus {
+  unknown
+  investigation
+  charged
+  trial_pending
+  convicted
+  plea
+  acquitted
+  appeal_pending
+  closed
+  exonerated
+}
+
+enum PersonRole {
+  suspect
+  defendant
+  victim
+  detective
+  prosecutor
+  defense
+  judge
+  witness
+  other
+}
+
+enum PublicFigureLevel {
+  unknown
+  private_person
+  limited_public_case_figure
+  public_official
+}
+
+enum AssetType {
+  interrogation
+  suspect_interview
+  confession
+  trial
+  bodycam
+  dashcam
+  audio_911
+  surveillance
+  jail_call
+  press_conference
+  other
+}
+
+enum RightsStatus {
+  unknown
+  public_web
+  public_record
+  court_record
+  licensed
+  owned
+  do_not_store
+  restricted
+}
+
+enum AccessStatus {
+  online
+  partial_online
+  metadata_only
+  requested
+  received
+  denied
+  sealed
+  unknown
+}
+
+enum DocumentType {
+  docket
+  motion
+  order
+  opinion
+  transcript
+  affidavit
+  warrant
+  police_report
+  public_records_response
+  article
+  other
+}
+
+enum OcrStatus {
+  not_needed
+  pending
+  done
+  failed
+}
+
+enum SpeakerRole {
+  detective
+  suspect
+  attorney
+  judge
+  witness
+  unknown
+}
+
+enum TranscriptCreatedBy {
+  caption_import
+  asr
+  manual
+  court_transcript
+}
+
+enum InterrogationSignalType {
+  rapport_building
+  free_narrative
+  clarification
+  strategic_evidence_withholding
+  evidence_reveal
+  statement_evidence_inconsistency
+  minimization
+  maximization
+  alternative_question
+  denial_loop
+  partial_admission
+  full_confession
+  post_admission_detailing
+  contamination_risk
+  false_confession_risk
+  miranda_issue
+  lawyer_request_issue
+  fatigue_or_duration_issue
+  vulnerability_issue
+  unknown
+}
+
+enum ConfidenceLevel {
+  low
+  medium
+  high
+}
+
+enum RequestType {
+  state_public_records
+  foia
+  court_clerk
+  media_license
+  other
+}
+
+enum RequestStatus {
+  draft
+  ready_for_review
+  submitted
+  acknowledged
+  fee_estimate
+  fulfilled
+  partially_fulfilled
+  denied
+  appealed
+  closed
+}
+
+enum SubmittedVia {
+  manual
+  muckrock
+  email
+  portal
+  mail
+  unknown
+}
+
+enum ReviewDecisionValue {
+  watch_now
+  needs_research
+  request_footage
+  court_records_follow_up
+  reject_reenactment
+  reject_reaction_news_recap
+  reject_no_primary_footage
+  reject_too_speculative
+  reject_ethical_privacy_risk
+  reject_poor_av
+  already_covered
+}
+
+enum AvailabilityStatus {
+  online_full
+  online_partial
+  court_exhibit_reference
+  document_reference_only
+  needs_public_records_request
+  unknown
+}
+
+enum AccessPathValue {
+  online_full
+  online_partial
+  court_archive
+  court_clerk_request
+  recap_or_pacer
+  agency_public_records_request
+  muckrock_existing_request
+  muckrock_new_request
+  media_license_required
+  sealed_or_restricted
+  human_review
+  unknown
+}
+
+enum RecommendedNextAction {
+  watch_now
+  research_case
+  find_docket
+  find_transcript
+  draft_records_request
+  reject
+  human_review
+}
+
+enum CandidateScoreStatus {
+  verified_source
+  provisional_metadata
+}
+
+enum QueryIntentValue {
+  online_primary_media
+  court_record_reference
+  suppression_or_miranda
+  trial_exhibit
+  public_records_request
+  negative_filter_probe
+}
+
+enum AiRunStatus {
+  succeeded
+  failed
+  skipped
+}
+
+enum EvidenceClaimType {
+  online_media_reference
+  court_recording_reference
+  public_records_path
+  commentary_or_recap
+  ethical_restriction
+}
+
+model Source {
+  id         String      @id
+  name       String
+  type       SourceType
+  baseUrl    String?
+  termsNotes String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  queryRuns  QueryRun[]
+  sourceHits SourceHit[]
+
+  @@map("sources")
+}
+
+model QueryRun {
+  id             String          @id
+  sourceId       String
+  query          String
+  queryFamily    String
+  paramsJson     Json
+  startedAt      DateTime        @default(now())
+  finishedAt     DateTime?
+  status         QueryStatus     @default(pending)
+  error          String?
+  resultCount    Int             @default(0)
+  source         Source          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceHits     SourceHit[]
+  candidates     Candidate[]
+  aiRuns         AiRun[]
+  evidenceClaims EvidenceClaim[]
+
+  @@index([sourceId, queryFamily])
+  @@map("query_runs")
+}
+
+model SourceHit {
+  id              String            @id
+  sourceId        String
+  queryRunId      String
+  plannedQueryId  String?
+  plannedQuery    String?
+  queryIntent     QueryIntentValue?
+  externalId      String?
+  url             String
+  title           String
+  description     String?
+  publishedAt     DateTime?
+  authorOrChannel String?
+  rawJson         Json
+  contentType     ContentType       @default(unknown)
+  ingestedAt      DateTime          @default(now())
+  source          Source            @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  queryRun        QueryRun          @relation(fields: [queryRunId], references: [id], onDelete: Cascade)
+  mediaAssets     MediaAsset[]
+  documents       Document[]
+  candidateScores CandidateScore[]
+  candidates      Candidate[]
+  reviewDecisions ReviewDecision[]
+  aiRuns          AiRun[]
+  evidenceClaims  EvidenceClaim[]
+
+  @@index([queryRunId])
+  @@index([sourceId, externalId])
+  @@index([url])
+  @@map("source_hits")
+}
+
+model Case {
+  id                    String                 @id
+  canonicalTitle        String
+  alternateTitles       String[]
+  jurisdiction          String?
+  state                 String?
+  county                String?
+  courtName             String?
+  courtCaseNumber       String?
+  agencyName            String?
+  incidentNumber        String?
+  caseStatus            CaseStatus             @default(unknown)
+  crimeType             String?
+  eventDate             DateTime?              @db.Date
+  arrestDate            DateTime?              @db.Date
+  trialDate             DateTime?              @db.Date
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  people                CasePerson[]
+  mediaAssets           MediaAsset[]
+  documents             Document[]
+  interrogationSignals  InterrogationSignal[]
+  candidateScores       CandidateScore[]
+  candidates            Candidate[]
+  publicRecordsRequests PublicRecordsRequest[]
+  reviewDecisions       ReviewDecision[]
+  evidenceClaims        EvidenceClaim[]
+
+  @@index([canonicalTitle])
+  @@index([courtCaseNumber])
+  @@map("cases")
+}
+
+model CasePerson {
+  id                String            @id @default(uuid())
+  caseId            String
+  name              String
+  role              PersonRole
+  isMinor           Boolean?
+  publicFigureLevel PublicFigureLevel @default(unknown)
+  notes             String?
+  case              Case              @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, role])
+  @@map("case_people")
+}
+
+model MediaAsset {
+  id                     String                @id @default(uuid())
+  caseId                 String?
+  sourceHitId            String?
+  assetType              AssetType
+  title                  String
+  url                    String?
+  storagePath            String?
+  rightsStatus           RightsStatus          @default(unknown)
+  accessStatus           AccessStatus          @default(unknown)
+  durationSeconds        Int?
+  audioQuality           Int?
+  videoQuality           Int?
+  hasTranscript          Boolean               @default(false)
+  containsMinors         Boolean?
+  containsGraphicContent Boolean?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  case                   Case?                 @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  sourceHit              SourceHit?            @relation(fields: [sourceHitId], references: [id], onDelete: SetNull)
+  transcriptSegments     TranscriptSegment[]
+  interrogationSignals   InterrogationSignal[]
+  candidateScores        CandidateScore[]
+
+  @@index([caseId])
+  @@index([sourceHitId])
+  @@map("media_assets")
+}
+
+model Document {
+  id                   String       @id @default(uuid())
+  caseId               String?
+  sourceHitId          String?
+  docType              DocumentType
+  title                String
+  url                  String?
+  storagePath          String?
+  sourceName           String
+  dateFiledOrPublished DateTime?    @db.Date
+  textExtracted        String?
+  ocrStatus            OcrStatus    @default(not_needed)
+  provenanceJson       Json
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  case                 Case?        @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  sourceHit            SourceHit?   @relation(fields: [sourceHitId], references: [id], onDelete: SetNull)
+
+  @@index([caseId])
+  @@index([sourceHitId])
+  @@map("documents")
+}
+
+model TranscriptSegment {
+  id                   String                @id @default(uuid())
+  mediaAssetId         String
+  speakerLabel         String?
+  speakerRole          SpeakerRole           @default(unknown)
+  startSeconds         Float
+  endSeconds           Float
+  text                 String
+  confidence           Float?
+  createdBy            TranscriptCreatedBy
+  mediaAsset           MediaAsset            @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  interrogationSignals InterrogationSignal[]
+
+  @@index([mediaAssetId])
+  @@map("transcript_segments")
+}
+
+model InterrogationSignal {
+  id                  String                  @id @default(uuid())
+  caseId              String
+  mediaAssetId        String?
+  transcriptSegmentId String?
+  startSeconds        Float?
+  endSeconds          Float?
+  signalType          InterrogationSignalType
+  description         String
+  evidenceQuote       String?
+  confidence          ConfidenceLevel
+  requiresHumanReview Boolean                 @default(true)
+  notes               String?
+  createdAt           DateTime                @default(now())
+  case                Case                    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  mediaAsset          MediaAsset?             @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  transcriptSegment   TranscriptSegment?      @relation(fields: [transcriptSegmentId], references: [id], onDelete: SetNull)
+
+  @@index([caseId])
+  @@index([mediaAssetId])
+  @@map("interrogation_signals")
+}
+
+model CandidateScore {
+  id                      String      @id @default(uuid())
+  caseId                  String?
+  sourceHitId             String?
+  mediaAssetId            String?
+  primaryFootageScore     Int
+  interrogationArcScore   Int
+  psychologyRichnessScore Int
+  sourcingScore           Int
+  structureScore          Int
+  avQualityScore          Int
+  ethicalSafetyScore      Int
+  uniquenessScore         Int
+  jcsFitScore             Int
+  accessDifficultyScore   Int
+  overallPriorityScore    Int
+  scoreExplanation        String
+  penaltiesJson           Json
+  createdAt               DateTime    @default(now())
+  case                    Case?       @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  sourceHit               SourceHit?  @relation(fields: [sourceHitId], references: [id], onDelete: SetNull)
+  mediaAsset              MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+
+  @@index([caseId])
+  @@index([sourceHitId])
+  @@index([overallPriorityScore])
+  @@map("candidate_scores")
+}
+
+model Candidate {
+  id                    String                @id
+  queryRunId            String
+  sourceHitId           String
+  plannedQueryId        String?
+  plannedQuery          String?
+  queryIntent           QueryIntentValue?
+  caseId                String
+  title                 String
+  caseTitle             String
+  sourceName            String
+  sourceType            SourceType
+  footageTypes          String[]
+  availabilityStatus    AvailabilityStatus
+  accessPath            AccessPathValue
+  sourcingConfidence    ConfidenceLevel
+  ethicalRisk           ConfidenceLevel
+  recommendedNextAction RecommendedNextAction
+  reviewDecision        ReviewDecisionValue?
+  summary               String
+  provenanceJson        Json
+  scoreStatus           CandidateScoreStatus
+  scoreJson             Json
+  overallPriorityScore  Int
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  queryRun              QueryRun              @relation(fields: [queryRunId], references: [id], onDelete: Cascade)
+  sourceHit             SourceHit             @relation(fields: [sourceHitId], references: [id], onDelete: Cascade)
+  case                  Case                  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  evidenceClaims        EvidenceClaim[]
+
+  @@index([queryRunId])
+  @@index([caseId])
+  @@index([sourceHitId])
+  @@index([overallPriorityScore])
+  @@map("candidates")
+}
+
+model PublicRecordsRequest {
+  id                 String        @id @default(uuid())
+  caseId             String
+  agencyName         String
+  agencyJurisdiction String
+  requestType        RequestType
+  status             RequestStatus @default(draft)
+  requestText        String
+  submittedVia       SubmittedVia?
+  submittedAt        DateTime?
+  dueDate            DateTime?     @db.Date
+  responseSummary    String?
+  feeEstimate        Decimal?      @db.Decimal(10, 2)
+  externalUrl        String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  case               Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, status])
+  @@map("public_records_requests")
+}
+
+model ReviewDecision {
+  id          String              @id @default(uuid())
+  caseId      String?
+  sourceHitId String?
+  decision    ReviewDecisionValue
+  reason      String
+  reviewer    String
+  createdAt   DateTime            @default(now())
+  case        Case?               @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  sourceHit   SourceHit?          @relation(fields: [sourceHitId], references: [id], onDelete: SetNull)
+
+  @@index([caseId])
+  @@index([sourceHitId])
+  @@map("review_decisions")
+}
+
+model AiRun {
+  id             String          @id @default(uuid())
+  queryRunId     String
+  sourceHitId    String
+  taskType       String
+  provider       String
+  model          String?
+  status         AiRunStatus
+  inputJson      Json
+  outputJson     Json
+  error          String?
+  createdAt      DateTime        @default(now())
+  queryRun       QueryRun        @relation(fields: [queryRunId], references: [id], onDelete: Cascade)
+  sourceHit      SourceHit       @relation(fields: [sourceHitId], references: [id], onDelete: Cascade)
+  evidenceClaims EvidenceClaim[]
+
+  @@index([queryRunId])
+  @@index([sourceHitId])
+  @@map("ai_runs")
+}
+
+model EvidenceClaim {
+  id               String            @id @default(uuid())
+  queryRunId       String
+  sourceHitId      String
+  candidateId      String?
+  caseId           String?
+  claimType        EvidenceClaimType
+  text             String
+  claimStatus      String
+  provenanceJson   Json
+  createdByAiRunId String?
+  createdAt        DateTime          @default(now())
+  queryRun         QueryRun          @relation(fields: [queryRunId], references: [id], onDelete: Cascade)
+  sourceHit        SourceHit         @relation(fields: [sourceHitId], references: [id], onDelete: Cascade)
+  candidate        Candidate?        @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  case             Case?             @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  createdByAiRun   AiRun?            @relation(fields: [createdByAiRunId], references: [id], onDelete: SetNull)
+
+  @@index([queryRunId])
+  @@index([sourceHitId])
+  @@index([caseId])
+  @@index([createdByAiRunId])
+  @@map("evidence_claims")
+}
