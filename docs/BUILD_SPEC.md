@@ -1,10 +1,12 @@
 # MVP Build Spec
 
-The first build is a research triage machine, not a video-analysis machine.
+The first build is a research triage and verification machine, not a video-analysis machine.
 
-It should help the user find rare cases where good footage probably exists, prove where that evidence came from, rank whether it is worth watching, and suggest the next lawful access path.
+It should help the user find rare cases where good footage probably exists, prove where that evidence came from, rank whether it is worth checking, verify whether the footage is actually usable, and suggest the next lawful access path.
 
-The acceptance demo starts from a sweep for `jury views interrogation video`, ranks seeded and live candidates, rejects obvious non-primary material, opens a case dossier, and drafts a public-records request without submitting it.
+The acceptance demo starts from a sweep for `jury views interrogation video`, ranks seeded and live candidates, rejects obvious non-primary material, opens a case dossier, marks a candidate through a human footage-verification gate, and drafts a public-records request without submitting it.
+
+Discovery metadata is not proof of usable footage. `watch_now` means the source is worth checking. A separate verification status decides whether footage is full, partial, courtroom playback, records-only, unavailable, or rejected.
 
 Phase 2 worker endpoints from the original plan are documented intent only. The MVP keeps sweep orchestration in the web app so there is no unused job layer duplicating classification and scoring logic.
 

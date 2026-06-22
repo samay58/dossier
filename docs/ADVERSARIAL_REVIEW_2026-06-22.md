@@ -69,8 +69,8 @@ Recommendation: prioritize case-resolution rules using docket number, case capti
 
 ## Roadmap Update
 
-This review was folded into the canonical roadmap. The highest-impact next pass is AI-assisted source-packet extraction, then claim modeling and case resolution:
+This review was folded into the canonical roadmap. The highest-impact next pass is now the verified footage gate:
 
-- Extract source-packet identifiers and claims with provenance.
-- Use extracted identifiers to merge related live hits into one dossier.
-- Move source trust and routing rules out of candidate normalization before adding more heuristics.
+- Confirm whether a promising candidate actually contains usable footage.
+- Separate full footage, partial footage, courtroom playback, records-only references, unavailable sources, and rejects.
+- Keep AI and metadata as research aids, not proof of usable footage.

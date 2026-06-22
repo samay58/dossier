@@ -43,7 +43,7 @@ Open `http://localhost:3000/discover`, run the `jury views interrogation video` 
 
 ## Project docs
 
-- `docs/NEXT_STEPS.md`: canonical living roadmap and current implementation priority.
+- `docs/NEXT_STEPS.md`: canonical master plan and current implementation priority.
 - `docs/AI_ASSISTED_RESEARCH_PLAN.md`: AI research-assist design spec.
 - `docs/superpowers/plans/2026-06-22-ai-research-layer.md`: execution plan for the first AI layer.
 - `docs/QUERY_STRATEGY_PLAN.md`: implemented query-planning design record.
